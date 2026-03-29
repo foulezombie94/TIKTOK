@@ -1,0 +1,212 @@
+'use client'
+
+import { useState, useRef, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { UploadCloud, CheckCircle, X, Loader2 } from 'lucide-react'
+import { useStore } from '@/store/useStore'
+import { supabase } from '@/lib/supabase'
+import toast from 'react-hot-toast'
+
+export default function UploadPage() {
+  const router = useRouter()
+  const currentUser = useStore(state => state.currentUser)
+  const setShowAuthModal = useStore(state => state.setShowAuthModal)
+
+  const [file, setFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [caption, setCaption] = useState('')
+  const [musicName, setMusicName] = useState('Son original')
+  const [uploading, setUploading] = useState(false)
+  const [progress, setProgress] = useState(0)
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (!currentUser) {
+       toast.error('Connectez-vous pour uploader une vidéo.')
+       setShowAuthModal(true)
+       router.push('/')
+    }
+  }, [currentUser, router, setShowAuthModal])
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0]
+    if (selected) {
+      if (selected.size > 50 * 1024 * 1024) {
+        toast.error('La vidéo ne doit pas dépasser 50 Mo')
+        return
+      }
+      setFile(selected)
+      setPreviewUrl(URL.createObjectURL(selected))
+    }
+  }
+
+  const handleUpload = async () => {
+    if (!file || !currentUser) return
+
+    setUploading(true)
+    setProgress(10) // Fake start progress
+
+    try {
+      // 1. Upload video to storage
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${currentUser.id}-${Math.random()}.${fileExt}`
+      const filePath = `videos/${fileName}`
+
+      setProgress(40)
+
+      const { error: uploadError } = await supabase.storage
+        .from('videos')
+        .upload(filePath, file, { upsert: false })
+
+      if (uploadError) throw uploadError
+
+      setProgress(70)
+
+      // 2. Get public URL
+      const { data: publicUrlData } = supabase.storage
+        .from('videos')
+        .getPublicUrl(filePath)
+      
+      const videoUrl = publicUrlData.publicUrl
+
+      setProgress(90)
+
+      // 3. Create database record
+      const { error: dbError } = await supabase
+        .from('videos')
+        .insert({
+          user_id: currentUser.id,
+          video_url: videoUrl,
+          caption,
+          music_name: musicName
+        })
+
+      if (dbError) throw dbError
+
+      setProgress(100)
+      toast.success('Vidéo publiée avec succès !')
+      
+      setTimeout(() => {
+        router.push(`/profile/${currentUser.username}`)
+      }, 1000)
+
+    } catch (error) {
+      console.error(error)
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de l&apos;upload')
+      setUploading(false)
+      setProgress(0)
+    }
+  }
+
+  if (!currentUser) return null
+
+  return (
+    <div className="h-[100dvh] w-full bg-black flex flex-col pt-14 pb-[80px] overflow-y-auto px-4 safe-area-bottom">
+      <div className="flex items-center justify-between mb-6 pt-4">
+        <h1 className="text-xl font-bold">Publier une vidéo</h1>
+        <button onClick={() => router.back()} className="p-2 bg-white/10 rounded-full">
+           <X className="w-5 h-5 text-white" />
+        </button>
+      </div>
+
+      <div className="flex flex-col gap-6">
+        {/* Upload Area */}
+        {!previewUrl ? (
+          <div 
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full aspect-[3/4] border-2 border-dashed border-zinc-700 rounded-xl bg-zinc-900/50 flex flex-col items-center justify-center gap-4 cursor-pointer hover:bg-zinc-800/50 transition-colors"
+          >
+            <UploadCloud className="w-12 h-12 text-zinc-400" />
+            <div className="text-center px-4">
+              <p className="text-sm font-semibold mb-1">Sélectionner une vidéo</p>
+              <p className="text-xs text-zinc-500">MP4 ou WebM, résolution 720x1280 recommandée</p>
+              <p className="text-xs text-zinc-500 mt-2">Jusqu&apos;à 50 Mo</p>
+            </div>
+            <button className="mt-4 px-6 py-2 bg-tiktok-pink rounded-md font-semibold text-sm">
+               Parcourir
+            </button>
+          </div>
+        ) : (
+          <div className="relative w-full aspect-[3/4] bg-zinc-900 rounded-xl overflow-hidden shadow-lg border border-zinc-800 shrink-0">
+             <video 
+               src={previewUrl} 
+               className="w-full h-full object-cover" 
+               controls 
+               autoPlay 
+               loop 
+               muted 
+             />
+             {!uploading && (
+               <button 
+                 onClick={() => { setFile(null); setPreviewUrl(null) }}
+                 className="absolute top-4 right-4 p-2 bg-black/60 rounded-full backdrop-blur-sm"
+               >
+                 <X className="w-4 h-4 text-white" />
+               </button>
+             )}
+          </div>
+        )}
+
+        <input
+          type="file"
+          accept="video/mp4,video/webm"
+          ref={fileInputRef}
+          className="hidden"
+          onChange={handleFileSelect}
+        />
+
+        {/* Form Details */}
+        <div className="flex flex-col gap-4">
+          <div>
+            <label className="text-sm font-semibold text-zinc-300 block mb-2">Description</label>
+            <textarea
+              value={caption}
+              onChange={(e) => setCaption(e.target.value)}
+              placeholder="Décris ta vidéo avec des #hashtags"
+              className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-tiktok-pink min-h-[100px] resize-none"
+              disabled={uploading}
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-semibold text-zinc-300 block mb-2">Nom de la musique</label>
+            <input
+              type="text"
+              value={musicName}
+              onChange={(e) => setMusicName(e.target.value)}
+              className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-tiktok-pink"
+              disabled={uploading}
+            />
+          </div>
+
+          <div className="border-t border-zinc-800 pt-6 mt-2">
+            <button
+               onClick={handleUpload}
+               disabled={!file || uploading}
+               className="w-full bg-tiktok-pink text-white font-bold py-3.5 rounded-lg text-[15px] flex items-center justify-center gap-2 hover:bg-[#e0204d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+               {uploading ? (
+                 <>
+                   <Loader2 className="w-5 h-5 animate-spin" />
+                   <span className="animate-pulse">Publication en cours... ({progress}%)</span>
+                 </>
+               ) : (
+                 <>
+                   <CheckCircle className="w-5 h-5" />
+                   Publier
+                 </>
+               )}
+            </button>
+            
+            {uploading && (
+               <div className="w-full bg-zinc-800 h-1.5 rounded-full mt-4 overflow-hidden">
+                  <div className="upload-progress h-full" style={{ width: `${progress}%` }} />
+               </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

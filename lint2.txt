@@ -1,0 +1,206 @@
+﻿
+> tiktok-clone@0.1.0 lint
+> next lint
+
+node.exe : 
+Au caractère Ligne:1 : 1
++ & "C:\Program 
+Files\nodejs/node.exe" "C:\
+Users\pc\AppData\Roaming\np
+m ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
+    + CategoryInfo         
+     : NotSpecified: (:St  
+  ring) [], RemoteExcept   
+ ion
+    + FullyQualifiedErrorI 
+   d : NativeCommandError
+ 
+./src/app/discover/page.tsx
+64:16  Warning: Using 
+`<img>` could result in 
+slower LCP and higher 
+bandwidth. Consider using 
+`<Image />` from 
+`next/image` to 
+automatically optimize 
+images. This may incur 
+additional usage or cost 
+from your provider. See: ht
+tps://nextjs.org/docs/messa
+ges/no-img-element  
+@next/next/no-img-element
+74:46  Error: `"` can be 
+escaped with `&quot;`, 
+`&ldquo;`, `&#34;`, 
+`&rdquo;`.  
+react/no-unescaped-entities
+74:54  Error: `"` can be 
+escaped with `&quot;`, 
+`&ldquo;`, `&#34;`, 
+`&rdquo;`.  
+react/no-unescaped-entities
+
+./src/app/profile/[username
+]/page.tsx
+7:43  Error: 'UserPlus' is 
+defined but never used.  @t
+ypescript-eslint/no-unused-
+vars
+55:6  Warning: React Hook 
+useEffect has missing 
+dependencies: 
+'fetchProfileData' and 
+'router'. Either include 
+them or remove the 
+dependency array.  
+react-hooks/exhaustive-deps
+82:74  Error: Unexpected 
+any. Specify a different 
+type.  @typescript-eslint/n
+o-explicit-any
+114:32  Error: Unexpected 
+any. Specify a different 
+type.  @typescript-eslint/n
+o-explicit-any
+119:32  Error: Unexpected 
+any. Specify a different 
+type.  @typescript-eslint/n
+o-explicit-any
+168:10  Warning: Using 
+`<img>` could result in 
+slower LCP and higher 
+bandwidth. Consider using 
+`<Image />` from 
+`next/image` to 
+automatically optimize 
+images. This may incur 
+additional usage or cost 
+from your provider. See: ht
+tps://nextjs.org/docs/messa
+ges/no-img-element  
+@next/next/no-img-element
+184:57  Error: `'` can be 
+escaped with `&apos;`, 
+`&lsquo;`, `&#39;`, 
+`&rsquo;`.  
+react/no-unescaped-entities
+
+./src/app/upload/page.tsx
+94:21  Error: Unexpected 
+any. Specify a different 
+type.  @typescript-eslint/n
+o-explicit-any
+124:62  Error: `'` can be 
+escaped with `&apos;`, 
+`&lsquo;`, `&#39;`, 
+`&rsquo;`.  
+react/no-unescaped-entities
+
+./src/components/Auth/AuthM
+odal.tsx
+63:19  Error: Unexpected 
+any. Specify a different 
+type.  @typescript-eslint/n
+o-explicit-any
+
+./src/components/Comments/C
+ommentSheet.tsx
+36:6  Warning: React Hook 
+useEffect has a missing 
+dependency: 
+'fetchComments'. Either 
+include it or remove the 
+dependency array.  
+react-hooks/exhaustive-deps
+89:14  Error: 'err' is 
+defined but never used.  @t
+ypescript-eslint/no-unused-
+vars
+137:64  Error: `'` can be 
+escaped with `&apos;`, 
+`&lsquo;`, `&#39;`, 
+`&rsquo;`.  
+react/no-unescaped-entities
+143:19  Warning: Using 
+`<img>` could result in 
+slower LCP and higher 
+bandwidth. Consider using 
+`<Image />` from 
+`next/image` to 
+automatically optimize 
+images. This may incur 
+additional usage or cost 
+from your provider. See: ht
+tps://nextjs.org/docs/messa
+ges/no-img-element  
+@next/next/no-img-element
+167:13  Warning: Using 
+`<img>` could result in 
+slower LCP and higher 
+bandwidth. Consider using 
+`<Image />` from 
+`next/image` to 
+automatically optimize 
+images. This may incur 
+additional usage or cost 
+from your provider. See: ht
+tps://nextjs.org/docs/messa
+ges/no-img-element  
+@next/next/no-img-element
+
+./src/components/VideoFeed/
+SidebarActions.tsx
+97:14  Error: 'error' is 
+defined but never used.  @t
+ypescript-eslint/no-unused-
+vars
+123:14  Error: 'error' is 
+defined but never used.  @t
+ypescript-eslint/no-unused-
+vars
+144:14  Error: 'error' is 
+defined but never used.  @t
+ypescript-eslint/no-unused-
+vars
+159:9  Warning: Using 
+`<img>` could result in 
+slower LCP and higher 
+bandwidth. Consider using 
+`<Image />` from 
+`next/image` to 
+automatically optimize 
+images. This may incur 
+additional usage or cost 
+from your provider. See: ht
+tps://nextjs.org/docs/messa
+ges/no-img-element  
+@next/next/no-img-element
+227:13  Warning: Using 
+`<img>` could result in 
+slower LCP and higher 
+bandwidth. Consider using 
+`<Image />` from 
+`next/image` to 
+automatically optimize 
+images. This may incur 
+additional usage or cost 
+from your provider. See: ht
+tps://nextjs.org/docs/messa
+ges/no-img-element  
+@next/next/no-img-element
+227:13  Warning: img 
+elements must have an alt 
+prop, either with 
+meaningful text, or an 
+empty string for 
+decorative images.  
+jsx-a11y/alt-text
+
+info  - Need to disable 
+some ESLint rules? Learn 
+more here: https://nextjs.o
+rg/docs/basic-features/esli
+nt#disabling-rules
