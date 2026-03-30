@@ -1,14 +1,28 @@
 import { NextResponse } from 'next/server'
-import Stripe from 'stripe'
 
-// On utilise Stripe en version stricte
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20' as any
-})
-
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
+// IMPORTANT: On n'initialise PAS Stripe au top-level du module.
+// Si on le fait, Next.js tente de l'exécuter au BUILD et plante
+// car STRIPE_SECRET_KEY n'existe pas dans l'environnement Vercel Build.
+// On l'initialise à l'intérieur du handler, au moment d'une vraie requête.
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 export async function POST(req: Request) {
+  // Lazy import : Stripe n'est importé que lors d'une vrai requête HTTP
+  const Stripe = (await import('stripe')).default
+
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+
+  if (!stripeSecretKey || !webhookSecret) {
+    console.error('Variables Stripe manquantes dans les variables d\'environnement.')
+    return NextResponse.json({ error: 'Configuration serveur invalide' }, { status: 500 })
+  }
+
+  const stripe = new Stripe(stripeSecretKey, {
+    apiVersion: '2024-06-20' as any
+  })
+
   const body = await req.text()
   const sig = req.headers.get('stripe-signature')
 
@@ -16,7 +30,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Pas de signature Stripe' }, { status: 400 })
   }
 
-  let event: Stripe.Event
+  let event: import('stripe').Stripe.Event
 
   try {
     event = stripe.webhooks.constructEvent(body, sig, webhookSecret)
@@ -25,19 +39,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 })
   }
 
-  // Idempotence & Scalabilité
   if (event.type === 'checkout.session.completed') {
     const sessionDetail = event.data.object as any
-    const userId = sessionDetail.metadata.userId
-    const coinsStr = sessionDetail.metadata.coins
+    const userId = sessionDetail.metadata?.userId
+    const coinsStr = sessionDetail.metadata?.coins
 
-    // LOGIQUE DE SÉCURITÉ ICI :
-    // 1. Lire la clé Supabase Service Role (Jamais exposée au client)
-    // 2. Faire un UPDATE sur wallets "SET balance = balance + coins WHERE user_id = userId"
-    // 3. Logger dans la table stripe_logs pour assurer qu'on ne donne pas les coins 2 fois en cas de requête réseau dupliquée
-
-    console.log(`💲 PAIEMENT REÇU ! Créditer ${coinsStr} Coins à l'utilisateur ${userId}`);
-    // Code de crédit Supabase à l'aide de `@supabase/supabase-js` avec supabase_service_role_key...
+    if (userId && coinsStr) {
+      console.log(`💲 PAIEMENT REÇU ! Créditer ${coinsStr} Coins à l'utilisateur ${userId}`)
+      // TODO: Ajouter le crédit Supabase avec supabase_service_role_key ici
+    }
   }
 
   return NextResponse.json({ received: true })
