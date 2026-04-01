@@ -2,9 +2,9 @@
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { useStore } from '@/store/useStore'
 import { Loader2, Music2, Apple, Mail, User, Lock, ArrowRight } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { syncNetworkIdentifiers } from '@/lib/device'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function LoginScreen() {
@@ -20,11 +20,78 @@ export default function LoginScreen() {
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
+        console.log("1. Tentative de connexion...");
+        
+        // 1. TENTATIVE DE CONNEXION
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
           password,
         })
-        if (error) throw error
+
+        // 2. SI ERREUR (Interception du bannissement)
+        if (authError) {
+          console.log("2. Erreur détectée, vérification du statut...");
+          // On utilise le RPC 'get_user_ban_info' pour vérifier si l'email est banni
+          const { data: banCheck } = await supabase.rpc('get_user_ban_info', { p_email: email.trim().toLowerCase() })
+          
+          if (banCheck && banCheck[0]?.status === 'banned') {
+            let durationText = "Définitif"
+            if (banCheck[0].banned_until) {
+              const dateFin = new Date(banCheck[0].banned_until)
+              const maintenant = new Date()
+              const diffMs = dateFin.getTime() - maintenant.getTime()
+            if (diffMs > 0) {
+              const diffJours = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+              const diffHeures = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+              
+              if (diffJours > 365) {
+                durationText = "Définitif"
+              } else {
+                durationText = diffJours > 0 ? `${diffJours}j et ${diffHeures}h` : `${diffHeures}h`
+              }
+            }
+          }
+
+          toast.error(`Votre compte est banni.\n⏰ Temps restant : ${durationText}`, {
+              duration: 8000,
+              icon: '🛑',
+              style: {
+                borderRadius: '16px',
+                background: '#121212',
+                color: '#fff',
+                border: '1px solid rgba(255, 0, 0, 0.2)',
+                padding: '16px',
+                fontWeight: 'bold',
+                whiteSpace: 'pre-line',
+              },
+            })
+            setLoading(false)
+            return
+          }
+          
+          // Si pas banni mais erreur, c'est une erreur classique
+          throw authError
+        }
+
+        if (authData.user) {
+          // Sync IP & Machine ID
+          syncNetworkIdentifiers(supabase, authData.user.id)
+          
+          // 2. Récupération du profil COMPLET
+          const { data: userData } = await supabase
+            .from('users')
+            .select('status, banned_until')
+            .eq('id', authData.user.id)
+            .single()
+
+          if (userData?.status === 'banned') {
+            await supabase.auth.signOut()
+            toast.error("Votre compte est banni.", { icon: '🛑' })
+            setLoading(false)
+            return
+          }
+        }
+
         toast.success('Bon retour !')
       } else {
         if (!username) {
@@ -34,7 +101,7 @@ export default function LoginScreen() {
         }
 
         const { error } = await supabase.auth.signUp({
-          email,
+          email: email.trim(),
           password,
           options: {
             data: {
@@ -47,8 +114,18 @@ export default function LoginScreen() {
         if (error) throw error
         toast.success('Compte créé ! Bienvenue sur TikTok.')
       }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Une erreur est survenue')
+    } catch (err: any) {
+      const errorMsg = err.message || 'Une erreur est survenue'
+      
+      if (errorMsg.includes('Invalid login credentials')) {
+        toast.error('Email ou mot de passe incorrect', { icon: null })
+      } else if (errorMsg.includes('User is banned')) {
+        // Le message premium a normalement déjà été déclenché par le RPC plus haut,
+        // ceci est une sécurité de secours.
+        toast.error('Votre compte est banni.', { icon: '🛑' })
+      } else {
+        toast.error(errorMsg, { icon: null })
+      }
     } finally {
       setLoading(false)
     }
@@ -77,7 +154,7 @@ export default function LoginScreen() {
                 <Music2 className="w-16 h-16 text-white drop-shadow-[2px_2px_0_#FE2C55] drop-shadow-[-2px_-2px_0_#25F4EE]" />
              </div>
           </motion.div>
-          <h1 className="text-3xl font-black mb-2 tracking-tight">TikTok Clone</h1>
+          <h1 className="text-3xl font-black mb-2 tracking-tight text-white">TikTok Clone</h1>
           <p className="text-zinc-500 text-sm">Préparez-vous à être inspiré.</p>
         </div>
 
@@ -176,7 +253,7 @@ export default function LoginScreen() {
       </motion.div>
 
       {/* Footer legal */}
-      <div className="absolute bottom-8 text-[11px] text-zinc-700 max-w-[300px] text-center">
+      <div className="absolute bottom-8 text-[11px] text-zinc-700 max-w-[300px] text-center px-4">
          En continuant, vous acceptez nos Conditions d&apos;utilisation et reconnaissez avoir lu notre Politique de confidentialité.
       </div>
     </div>

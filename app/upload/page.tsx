@@ -2,10 +2,11 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { UploadCloud, CheckCircle, X, Loader2 } from 'lucide-react'
+import { UploadCloud, CheckCircle, X, Loader2, Shield } from 'lucide-react'
 import { useStore } from '@/store/useStore'
 import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
+import { validateVideoFile, validateMagicBytes, sanitizeText } from '@/lib/sanitize'
 
 export default function UploadPage() {
   const router = useRouter()
@@ -38,17 +39,28 @@ export default function UploadPage() {
     }
   }, [previewUrl])
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0]
     if (selected) {
-      if (!['video/mp4', 'video/webm'].includes(selected.type)) {
-        toast.error('Format non supporté. MP4 ou WebM uniquement.')
+      // Phase 4: Validation stricte via lib/sanitize
+      const validation = validateVideoFile(selected)
+      if (!validation.valid) {
+        toast.error(validation.error || 'Fichier invalide')
         return
       }
-      if (selected.size > 50 * 1024 * 1024) {
-        toast.error('La vidéo ne doit pas dépasser 50 Mo')
+
+      // Phase 4: Vérification des magic bytes (anti-falsification content-type)
+      try {
+        const headerBuffer = await selected.slice(0, 16).arrayBuffer()
+        if (!validateMagicBytes(headerBuffer, selected.type)) {
+          toast.error('Le fichier ne correspond pas au format déclaré. Tentative de falsification détectée.')
+          return
+        }
+      } catch {
+        toast.error('Impossible de valider le fichier.')
         return
       }
+
       setFile(selected)
       
       if (previewUrl) URL.revokeObjectURL(previewUrl)
@@ -86,13 +98,14 @@ export default function UploadPage() {
 
       setProgress(90)
 
+      // Phase 4: Sanitize user inputs before DB insertion
       const { error: dbError } = await supabase
         .from('videos')
         .insert({
           user_id: currentUser.id,
           video_url: videoUrl,
-          caption,
-          music_name: musicName
+          caption: sanitizeText(caption, 2000),
+          music_name: sanitizeText(musicName, 100)
         })
 
       if (dbError) throw dbError

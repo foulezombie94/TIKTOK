@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
+import { syncNetworkIdentifiers } from '@/lib/device'
 import { useStore } from '@/store/useStore'
 import LoginScreen from './LoginScreen'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -10,6 +12,14 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const currentUser = useStore((s) => s.currentUser)
   const isAuthLoading = useStore((s) => s.isAuthLoading)
   const setIsAuthLoading = useStore((s) => s.setIsAuthLoading)
+
+  // 🛡️ SECURITY SYNC (Proactive Capture)
+  useEffect(() => {
+    if (currentUser?.id) {
+      console.log("🛡️ AuthGuard : Lancement de la capture de sécurité...");
+      syncNetworkIdentifiers(supabase, currentUser.id)
+    }
+  }, [currentUser])
 
   // Safety timeout: prevent getting stuck in loading state forever
   useEffect(() => {

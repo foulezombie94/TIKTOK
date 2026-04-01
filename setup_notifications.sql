@@ -32,7 +32,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 DROP TRIGGER IF EXISTS on_like_created ON public.likes;
 CREATE TRIGGER on_like_created
@@ -53,7 +53,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 DROP TRIGGER IF EXISTS on_comment_created ON public.comments;
 CREATE TRIGGER on_comment_created
@@ -70,7 +70,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 DROP TRIGGER IF EXISTS on_follow_created ON public.follows;
 CREATE TRIGGER on_follow_created
@@ -91,7 +91,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 DROP TRIGGER IF EXISTS on_bookmark_created ON public.bookmarks;
 CREATE TRIGGER on_bookmark_created
@@ -111,7 +111,7 @@ BEGIN
   WHERE type = 'like' AND actor_id = OLD.user_id AND video_id = OLD.video_id;
   RETURN OLD;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 DROP TRIGGER IF EXISTS on_like_deleted ON public.likes;
 CREATE TRIGGER on_like_deleted
@@ -126,7 +126,7 @@ BEGIN
   WHERE type = 'comment' AND actor_id = OLD.user_id AND video_id = OLD.video_id AND text = OLD.content;
   RETURN OLD;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 DROP TRIGGER IF EXISTS on_comment_deleted ON public.comments;
 CREATE TRIGGER on_comment_deleted
@@ -141,7 +141,7 @@ BEGIN
   WHERE type = 'follow' AND actor_id = OLD.follower_id AND user_id = OLD.following_id;
   RETURN OLD;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 DROP TRIGGER IF EXISTS on_follow_deleted ON public.follows;
 CREATE TRIGGER on_follow_deleted
@@ -156,7 +156,7 @@ BEGIN
   WHERE type = 'bookmark' AND actor_id = OLD.user_id AND video_id = OLD.video_id;
   RETURN OLD;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 DROP TRIGGER IF EXISTS on_bookmark_deleted ON public.bookmarks;
 CREATE TRIGGER on_bookmark_deleted

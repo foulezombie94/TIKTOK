@@ -45,7 +45,7 @@ BEGIN
 
   RETURN true;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- RLS Sécurisé
 ALTER TABLE public.wallets ENABLE ROW LEVEL SECURITY;
@@ -96,7 +96,7 @@ BEGIN
   ) INTO v_stats;
   RETURN v_stats;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- ------------------------------------------
 -- 3. MODÉRATION (ADMIN ET REPORTS)

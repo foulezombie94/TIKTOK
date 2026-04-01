@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Search } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { sanitizeSearchQuery } from '@/lib/sanitize'
 
 interface UserItem {
   id: string
@@ -26,10 +27,17 @@ export default function DiscoverPage() {
       return
     }
 
+    const sanitized = sanitizeSearchQuery(searchQuery)
+    if (!sanitized) {
+      setResults([])
+      setIsSearching(false)
+      return
+    }
+
     const { data } = await supabase
       .from('users')
       .select('id, username, display_name, avatar_url')
-      .ilike('username', `%${searchQuery}%`)
+      .ilike('username', `%${sanitized}%`)
       .limit(10)
 
     if (data) setResults(data)

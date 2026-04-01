@@ -28,7 +28,7 @@ BEGIN
 
   RETURN true;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 
 -- 2. FAILLE : ESPOINAGE DE REVENUS (Analytics)
@@ -52,7 +52,7 @@ BEGIN
   ) INTO v_stats;
   RETURN v_stats;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 
 -- 3. FAILLE : HISTORIQUE FINANCIER EXPOSÉ (RLS)
@@ -89,7 +89,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 
 -- 5. FAILLE : PIRATAGE FICHIERS (Bypass Storage 50 Mo)
